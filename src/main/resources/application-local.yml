@@ -1,0 +1,8 @@
+# Local development profile: seeds sample catalog data and logs SQL-free, human-readable output.
+# Secrets (DB_PASSWORD, JWT_SECRET, ADMIN_PASSWORD) still come from environment variables / .env.
+app:
+  seed:
+    enabled: true
+logging:
+  level:
+    com.ticketbooking: DEBUG

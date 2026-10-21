@@ -1,0 +1,31 @@
+time="2026-10-21T13:08:27Z" level=info msg="INVARIANT screeningId=6 seats=100 booked=100 held=0 available=0" source=console
+
+     ✓ seat map ok
+     ✓ hold created
+     ✓ booking confirmed
+
+     bookings_confirmed.............: 100     1.234604/s
+     checks.........................: 100.00% 4019 out of 4019
+     data_received..................: 57 MB   703 kB/s
+     data_sent......................: 7.1 MB  87 kB/s
+     hold_conflicts.................: 12636   156.004578/s
+     holds_created..................: 100     1.234604/s
+     http_req_blocked...............: avg=477.19µs min=767ns    med=2.66µs   p(90)=5.71µs   p(95)=7.4µs    p(99)=1.71ms   max=303.86ms
+     http_req_connecting............: avg=353µs    min=0s       med=0s       p(90)=0s       p(95)=0s       p(99)=115.55µs max=303.75ms
+     http_req_duration..............: avg=209.64ms min=10.62ms  med=182.19ms p(90)=348.04ms p(95)=427.63ms p(99)=725.43ms max=1.89s   
+       { expected_response:true }...: avg=209.64ms min=10.62ms  med=182.19ms p(90)=348.04ms p(95)=427.63ms p(99)=725.43ms max=1.89s   
+     ✗ { name:confirm }.............: avg=640.36ms min=134.35ms med=575.07ms p(90)=1.02s    p(95)=1.1s     p(99)=1.39s    max=1.49s   
+     ✓ { name:hold }................: avg=224.47ms min=20.02ms  med=197.2ms  p(90)=361.29ms p(95)=439.04ms p(99)=695.07ms max=1.44s   
+     http_req_failed................: 0.00%   0 out of 16862
+     http_req_receiving.............: avg=3.15ms   min=11.53µs  med=33.1µs   p(90)=1.15ms   p(95)=17.03ms  p(99)=77.46ms  max=296.3ms 
+     http_req_sending...............: avg=854.71µs min=3.06µs   med=10.43µs  p(90)=32.71µs  p(95)=126.31µs p(99)=25.89ms  max=208.1ms 
+     http_req_tls_handshaking.......: avg=0s       min=0s       med=0s       p(90)=0s       p(95)=0s       p(99)=0s       max=0s      
+     http_req_waiting...............: avg=205.63ms min=6.03ms   med=178.67ms p(90)=339.7ms  p(95)=418.78ms p(99)=716.52ms max=1.89s   
+     http_reqs......................: 16862   208.178949/s
+     iteration_duration.............: avg=217.25ms min=10.7ms   med=187.86ms p(90)=352.95ms p(95)=430.46ms p(99)=743.73ms max=2.75s   
+     iterations.....................: 16555   204.388714/s
+   ✓ unexpected_errors..............: 0       0/s
+     vus............................: 0       min=0            max=60
+     vus_max........................: 60      min=60           max=60
+
+time="2026-10-21T13:08:27Z" level=error msg="thresholds on metrics 'http_req_duration{name:confirm}' have been crossed"

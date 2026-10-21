@@ -1,0 +1,35 @@
+# Test-only configuration. The JWT secret below is a throwaway value used solely by the
+# test suite; real deployments must supply JWT_SECRET through the environment.
+app:
+  security:
+    jwt:
+      secret: test-only-secret-not-for-production-0123456789abcdef
+  scheduling:
+    enabled: false      # tests invoke the expiry worker / outbox publisher directly and deterministically
+  seed:
+    enabled: false
+  bootstrap:
+    admin:
+      email: ""
+      password: ""
+
+spring:
+  data:
+    redis:
+      host: ${test.redis.host}
+      port: ${test.redis.port}
+  datasource:
+    hikari:
+      maximum-pool-size: 30
+  kafka:
+    consumer:
+      group-id: notification-service-test
+
+logging:
+  level:
+    com.ticketbooking: INFO
+    org.apache.kafka: ERROR
+    kafka: ERROR
+    org.springframework.kafka: WARN
+    state.change.logger: ERROR
+    org.testcontainers: INFO

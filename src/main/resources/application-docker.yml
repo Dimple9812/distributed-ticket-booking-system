@@ -1,0 +1,5 @@
+# Profile used inside Docker Compose: JSON (ECS) structured logs for log shippers.
+logging:
+  structured:
+    format:
+      console: ecs

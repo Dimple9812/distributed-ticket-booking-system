@@ -1,0 +1,175 @@
+{
+  "info": {
+    "name": "Distributed Ticket Booking System",
+    "description": "Run top to bottom. Requests store tokens and ids in collection variables. Set adminEmail/adminPassword to the ADMIN_EMAIL/ADMIN_PASSWORD you started the app with.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "adminEmail", "value": "admin@example.com" },
+    { "key": "adminPassword", "value": "change-me-admin-password" },
+    { "key": "customerEmail", "value": "asha@example.com" },
+    { "key": "adminToken", "value": "" },
+    { "key": "customerToken", "value": "" },
+    { "key": "venueId", "value": "" },
+    { "key": "eventId", "value": "" },
+    { "key": "screeningId", "value": "" },
+    { "key": "screeningSeatId", "value": "" },
+    { "key": "holdId", "value": "" },
+    { "key": "bookingId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Admin login",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('adminToken', pm.response.json().accessToken);"] } }],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/v1/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"{{adminEmail}}\",\"password\":\"{{adminPassword}}\"}" }
+          }
+        },
+        {
+          "name": "Register customer",
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.code === 201) pm.collectionVariables.set('customerToken', pm.response.json().accessToken);"] } }],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/v1/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"{{customerEmail}}\",\"password\":\"Passw0rd!long\",\"fullName\":\"Asha Verma\"}" }
+          }
+        },
+        {
+          "name": "Customer login",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('customerToken', pm.response.json().accessToken);"] } }],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/v1/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"{{customerEmail}}\",\"password\":\"Passw0rd!long\"}" }
+          }
+        },
+        {
+          "name": "Me",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/users/me", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }] }
+        }
+      ]
+    },
+    {
+      "name": "2. Admin catalog",
+      "item": [
+        {
+          "name": "Create venue",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('venueId', pm.response.json().id);"] } }],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/v1/admin/venues",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "body": { "mode": "raw", "raw": "{\"name\":\"Postman Audi {{$timestamp}}\",\"city\":\"Kanpur\",\"address\":\"Mall Road\",\"rows\":[{\"rowLabel\":\"A\",\"seatCount\":10,\"seatType\":\"STANDARD\"},{\"rowLabel\":\"B\",\"seatCount\":6,\"seatType\":\"VIP\"}]}" }
+          }
+        },
+        {
+          "name": "Create event",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('eventId', pm.response.json().id);"] } }],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/v1/admin/events",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "body": { "mode": "raw", "raw": "{\"title\":\"Dune: Part Two\",\"description\":\"Sci-fi epic\",\"category\":\"MOVIE\",\"language\":\"English\",\"durationMinutes\":166}" }
+          }
+        },
+        {
+          "name": "Create screening (+2 days)",
+          "event": [
+            { "listen": "prerequest", "script": { "exec": ["pm.collectionVariables.set('startsAt', new Date(Date.now() + 2*24*3600*1000).toISOString());"] } },
+            { "listen": "test", "script": { "exec": ["pm.collectionVariables.set('screeningId', pm.response.json().id);"] } }
+          ],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/v1/admin/screenings",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "body": { "mode": "raw", "raw": "{\"eventId\":{{eventId}},\"venueId\":{{venueId}},\"startsAt\":\"{{startsAt}}\"}" }
+          }
+        },
+        {
+          "name": "Assign seats and prices",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/v1/admin/screenings/{{screeningId}}/seats",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "body": { "mode": "raw", "raw": "{\"priceBySeatType\":{\"STANDARD\":250.00,\"VIP\":750.00}}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Browse (public)",
+      "item": [
+        { "name": "List events", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/events?page=0&size=20" } },
+        { "name": "Event details", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/events/{{eventId}}" } },
+        { "name": "Screening details", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/screenings/{{screeningId}}" } },
+        {
+          "name": "Seat map",
+          "event": [{ "listen": "test", "script": { "exec": ["const s = pm.response.json().seats.find(x => x.status === 'AVAILABLE'); if (s) pm.collectionVariables.set('screeningSeatId', s.screeningSeatId);"] } }],
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/screenings/{{screeningId}}/seats" }
+        }
+      ]
+    },
+    {
+      "name": "4. Hold and book",
+      "item": [
+        {
+          "name": "Hold seat",
+          "event": [
+            { "listen": "prerequest", "script": { "exec": ["pm.collectionVariables.set('holdKey', pm.variables.replaceIn('{{$guid}}'));"] } },
+            { "listen": "test", "script": { "exec": ["pm.collectionVariables.set('holdId', pm.response.json().holdId);"] } }
+          ],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/v1/screenings/{{screeningId}}/holds",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{customerToken}}" }, { "key": "Idempotency-Key", "value": "{{holdKey}}" }],
+            "body": { "mode": "raw", "raw": "{\"screeningSeatIds\":[{{screeningSeatId}}]}" }
+          }
+        },
+        {
+          "name": "Get hold",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/holds/{{holdId}}", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }] }
+        },
+        {
+          "name": "Confirm booking",
+          "event": [
+            { "listen": "prerequest", "script": { "exec": ["pm.collectionVariables.set('confirmKey', pm.variables.replaceIn('{{$guid}}'));"] } },
+            { "listen": "test", "script": { "exec": ["pm.collectionVariables.set('bookingId', pm.response.json().bookingId);"] } }
+          ],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/v1/bookings/confirm",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{customerToken}}" }, { "key": "Idempotency-Key", "value": "{{confirmKey}}" }],
+            "body": { "mode": "raw", "raw": "{\"holdId\":\"{{holdId}}\",\"paymentMethodToken\":\"pm_card_visa\"}" }
+          }
+        },
+        {
+          "name": "Confirm again with same key (replayed)",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/v1/bookings/confirm",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{customerToken}}" }, { "key": "Idempotency-Key", "value": "{{confirmKey}}" }],
+            "body": { "mode": "raw", "raw": "{\"holdId\":\"{{holdId}}\",\"paymentMethodToken\":\"pm_card_visa\"}" }
+          }
+        },
+        { "name": "My bookings", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/bookings", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }] } },
+        { "name": "Booking details", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }] } },
+        { "name": "My notifications", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/notifications", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }] } },
+        {
+          "name": "Cancel booking",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }] }
+        },
+        {
+          "name": "Release hold",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/holds/{{holdId}}", "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }] }
+        }
+      ]
+    },
+    {
+      "name": "5. Operations",
+      "item": [
+        { "name": "Health", "request": { "method": "GET", "url": "{{baseUrl}}/actuator/health" } },
+        { "name": "Prometheus metrics", "request": { "method": "GET", "url": "{{baseUrl}}/actuator/prometheus" } },
+        { "name": "OpenAPI spec", "request": { "method": "GET", "url": "{{baseUrl}}/v3/api-docs" } }
+      ]
+    }
+  ]
+}

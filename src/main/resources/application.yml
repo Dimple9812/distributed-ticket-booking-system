@@ -1,0 +1,139 @@
+spring:
+  application:
+    name: ticket-booking-system
+  threads:
+    virtual:
+      enabled: false
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ticketing}
+    username: ${DB_USERNAME:ticketing}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      connection-timeout: 5000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate          # schema is owned by Flyway, never by Hibernate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        order_inserts: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 500ms
+      connect-timeout: 500ms
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.block.ms: 5000
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 10000
+    consumer:
+      group-id: notification-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        isolation.level: read_committed
+    listener:
+      ack-mode: record
+      auto-startup: ${KAFKA_CONSUMERS_ENABLED:true}
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      issuer: ticket-booking-system
+      access-token-ttl: ${JWT_TTL:PT1H}
+  bootstrap:
+    admin:
+      email: ${ADMIN_EMAIL:}
+      password: ${ADMIN_PASSWORD:}
+  seed:
+    enabled: ${SEED_DATA:false}
+  scheduling:
+    enabled: true
+  booking:
+    currency: INR
+    max-seats-per-hold: 10
+    hold-ttl: ${HOLD_TTL:PT5M}
+    cancellation-cutoff: PT2H
+    redis-lock:
+      enabled: true
+      # DB_ONLY: when Redis is down, continue with PostgreSQL-only protection (still correct).
+      # FAIL_CLOSED: when Redis is down, reject hold requests with 503.
+      failure-mode: ${REDIS_FAILURE_MODE:DB_ONLY}
+    expiry:
+      interval: PT10S
+      batch-size: 100
+  idempotency:
+    retention: PT24H
+    in-progress-lease: PT30S
+    cleanup-interval: PT1H
+  outbox:
+    poll-interval: PT0.5S
+    batch-size: 50
+    claim-ttl: PT30S
+    max-attempts: 10
+    send-timeout: PT10S
+  kafka:
+    topics:
+      booking-events: booking-events
+      booking-events-dlt: booking-events.DLT
+    partitions: 3
+    replication-factor: 1
+    consumer:
+      retry-attempts: 3
+      retry-initial-interval: PT0.2S
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+  health:
+    redis:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+    tags:
+      application: ${spring.application.name}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  pattern:
+    level: "%5p [corr=%X{correlationId:-}]"
+  level:
+    com.ticketbooking: INFO
+    org.apache.kafka: WARN

@@ -1,0 +1,11 @@
+target/
+*.class
+*.log
+.env
+.env.*
+!.env.example
+.idea/
+*.iml
+.vscode/
+.DS_Store
+load-test/results/summary.json
