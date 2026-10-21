@@ -29,6 +29,14 @@ More detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (sequence + state di
 [`docs/DESIGN-DECISIONS.md`](docs/DESIGN-DECISIONS.md) · [`load-test/README.md`](load-test/README.md) ·
 Postman: [`docs/postman/ticket-booking.postman_collection.json`](docs/postman/ticket-booking.postman_collection.json)
 
+## Frontend
+A React (Vite) single-page app in [`frontend/`](frontend) — event browsing, a live seat map, 5-minute hold with
+countdown, simulated checkout (including a card that is declined), booking history and cancellation, Kafka-driven
+notifications, an admin console, and a **"Run the race" demo** that fires 15 simultaneous holds at one seat and
+shows that exactly one wins. In production the Docker build compiles it into Spring Boot's `static/` folder, so the
+UI and API share one origin (no CORS). For development: `cd frontend && npm install && npm run dev`
+(http://localhost:5173, proxies `/api` to the backend on :8080).
+
 ## Features
 - Registration / login with BCrypt passwords and HS256 JWTs; `CUSTOMER` and `ADMIN` roles.
 - Admin APIs: venues with seat layouts, events, screenings (overlaps in a venue rejected by a DB exclusion constraint), seat pricing per seat type.

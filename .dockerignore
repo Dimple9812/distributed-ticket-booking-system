@@ -4,3 +4,5 @@ target/
 load-test/
 docs/
 *.md
+frontend/node_modules/
+frontend/dist/

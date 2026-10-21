@@ -54,7 +54,8 @@ spring:
       auto-startup: ${KAFKA_CONSUMERS_ENABLED:true}
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:${PORT:8080}}
+  forward-headers-strategy: framework   # behind Railway's proxy: honour X-Forwarded-* (https links in Swagger)
   shutdown: graceful
 
 app:

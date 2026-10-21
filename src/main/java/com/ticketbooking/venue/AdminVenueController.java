@@ -34,6 +34,12 @@ public class AdminVenueController {
         return venueService.create(request);
     }
 
+    @GetMapping
+    @Operation(summary = "List venues with seat counts (ADMIN)")
+    public java.util.List<VenueResponse> list() {
+        return venueService.list();
+    }
+
     @GetMapping("/{venueId}")
     @Operation(summary = "Get a venue with its seats (ADMIN)")
     public VenueResponse get(@PathVariable Long venueId) {

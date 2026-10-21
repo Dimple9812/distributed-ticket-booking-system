@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface EventRepository extends JpaRepository<Event, Long> {
 
     Page<Event> findByCategory(EventCategory category, Pageable pageable);
+
+    java.util.Optional<Event> findFirstByTitleOrderByIdAsc(String title);
 }

@@ -9,3 +9,7 @@ target/
 .vscode/
 .DS_Store
 load-test/results/summary.json
+frontend/node_modules/
+frontend/dist/
+src/main/resources/static/
+dump.rdb

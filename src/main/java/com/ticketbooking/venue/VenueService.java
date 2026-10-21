@@ -62,6 +62,15 @@ public class VenueService {
         return toResponse(venue, seatRepository.findByVenueIdOrderByRowLabelAscSeatNumberAsc(venueId));
     }
 
+    /** All venues with seat counts (no seat detail), newest first. */
+    @Transactional(readOnly = true)
+    public List<VenueResponse> list() {
+        return venueRepository.findAll(org.springframework.data.domain.Sort.by("id").descending()).stream()
+                .map(v -> new VenueResponse(v.getId(), v.getName(), v.getCity(), v.getAddress(),
+                        (int) seatRepository.countByVenueId(v.getId()), List.of()))
+                .toList();
+    }
+
     private static VenueResponse toResponse(Venue venue, List<Seat> seats) {
         return new VenueResponse(venue.getId(), venue.getName(), venue.getCity(), venue.getAddress(), seats.size(),
                 seats.stream().map(SeatResponse::from).toList());
