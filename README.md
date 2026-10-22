@@ -1,5 +1,9 @@
 # Distributed Ticket Booking System
 
+**Live demo:** https://seatline-ticket-booking.onrender.com — hosted on Render's free tier, so the first visit after
+15 idle minutes takes about a minute to wake up. Payments are simulated. On Render, Kafka is replaced by in-process
+event delivery ([details](#option-c--render-free-tier-one-click)).
+
 A Spring Boot backend for selling event tickets where **two customers can never buy the same seat for the
 same screening**, even under a burst of simultaneous requests, Redis failures or Kafka outages.
 

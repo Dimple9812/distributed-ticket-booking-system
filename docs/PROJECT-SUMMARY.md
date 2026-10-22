@@ -4,6 +4,7 @@ A one-page overview: what was built, what was verified, how to talk about it in 
 and what is left to do. For the full technical write-up see the [README](../README.md).
 
 ## Status
+- **Live demo:** https://seatline-ticket-booking.onrender.com (Render free tier; Kafka replaced by in-process delivery there).
 - 73 automated tests (15 unit, 58 integration) pass against real PostgreSQL 16, Redis 7 and a real Kafka broker.
   The final code passed 5 full builds in a row.
 - **Not verified:** `docker-compose.yml`, the `Dockerfile` and the Testcontainers path were never executed
