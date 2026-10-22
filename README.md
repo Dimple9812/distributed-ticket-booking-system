@@ -6,7 +6,7 @@ same screening**, even under a burst of simultaneous requests, Redis failures or
 Customers browse events, hold seats for 5 minutes, pay (simulated) and confirm, view and cancel bookings,
 and receive notifications asynchronously. Admins manage venues, seat layouts, events, screenings and prices.
 
-> **Status, stated plainly.** 70 automated tests (15 unit, 55 integration) pass against real PostgreSQL 16,
+> **Status, stated plainly.** 73 automated tests (15 unit, 58 integration) pass against real PostgreSQL 16,
 > Redis 7 and a real Kafka broker; the final code passed five consecutive full builds. The app was started
 > from the packaged jar and exercised end to end, and a k6 load test was measured. **The Docker Compose file and
 > Dockerfile were written but not executed in the build environment** (it had no Docker daemon), so treat them as
@@ -307,6 +307,20 @@ docker compose logs -f app        # JSON (ECS) logs
 ```
 Kafka listeners: containers use `kafka:29092`, the host uses `localhost:9092`.
 
+### Option C — Render (free tier, one click)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Dimple9812/distributed-ticket-booking-system)
+
+[`render.yaml`](render.yaml) creates the web service (Docker), a free PostgreSQL and a free Key Value (Redis)
+in Singapore, wires their connection details in, and generates `JWT_SECRET` and `ADMIN_PASSWORD` (shown in the
+Render dashboard under the service's *Environment*; the admin email is `admin@seatline.demo`).
+
+Render's free tier has **no Kafka**, so the `render` profile sets `MESSAGING_TRANSPORT=in-process`: the outbox
+publisher hands each event directly to the same idempotent notification handler the Kafka consumer uses. The
+transactional outbox, retries with back-off, parking of failing events and `processed_events` de-duplication all
+still apply (covered by `InProcessTransportIT`); what you lose is the decoupling of producer and consumer.
+Other free-tier limits: the service sleeps after 15 minutes idle (the next visit takes about a minute to wake it),
+and Render's free PostgreSQL expires after 30 days.
+
 ### Stop
 ```bash
 docker compose --profile app down        # keep data
@@ -322,7 +336,7 @@ docker compose --profile app down -v     # also delete the PostgreSQL/Kafka volu
 ## Testing
 ```bash
 mvn test        # 15 unit tests, no infrastructure needed
-mvn verify      # unit + 55 integration tests
+mvn verify      # unit + 58 integration tests
 ```
 Integration tests start **PostgreSQL and Redis with Testcontainers** when Docker is available, and a real
 in-process **KRaft Kafka broker** (spring-kafka-test) always. Without Docker, point them at running services:
@@ -338,7 +352,7 @@ plus the embedded Kafka broker — **not** Testcontainers, which needs Docker:
 
 ```
 Unit:        Tests run: 15, Failures: 0, Errors: 0, Skipped: 0
-Integration: Tests run: 55, Failures: 0, Errors: 0, Skipped: 0
+Integration: Tests run: 58, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS  (~75 s per full build; final code: 5 consecutive green builds)
 ```
 

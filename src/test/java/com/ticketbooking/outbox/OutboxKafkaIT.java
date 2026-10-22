@@ -65,7 +65,7 @@ class OutboxKafkaIT extends AbstractIntegrationTest {
         String bookingId = bookSeat(c);
 
         // A publisher whose broker is unreachable (real Kafka client, dead bootstrap address).
-        OutboxPublisher brokenPublisher = new OutboxPublisher(jdbc, deadBrokerTemplate(), outboxProperties, metrics, clock);
+        OutboxPublisher brokenPublisher = new OutboxPublisher(jdbc, new KafkaEventTransport(deadBrokerTemplate(), outboxProperties), outboxProperties, metrics, clock);
         assertThat(brokenPublisher.publishPending()).isZero();
 
         Map<String, Object> row = jdbc.queryForMap(
@@ -109,8 +109,8 @@ class OutboxKafkaIT extends AbstractIntegrationTest {
             bookSeat(c);
         }
         List<OutboxPublisher> publishers = List.of(publisher,
-                new OutboxPublisher(jdbc, kafkaTemplate, outboxProperties, metrics, clock),
-                new OutboxPublisher(jdbc, kafkaTemplate, outboxProperties, metrics, clock));
+                new OutboxPublisher(jdbc, new KafkaEventTransport(kafkaTemplate, outboxProperties), outboxProperties, metrics, clock),
+                new OutboxPublisher(jdbc, new KafkaEventTransport(kafkaTemplate, outboxProperties), outboxProperties, metrics, clock));
 
         List<Integer> published = ConcurrentRunner.runAtOnce(3, i -> publishers.get(i).publishPending());
 

@@ -2,15 +2,12 @@ package com.ticketbooking.outbox;
 
 import com.ticketbooking.common.BookingMetrics;
 import com.ticketbooking.config.OutboxProperties;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.lang.management.ManagementFactory;
-import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Duration;
@@ -19,12 +16,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
- * Relays outbox rows to Kafka with <b>at-least-once</b> semantics.
+ * Relays outbox rows to the configured {@link EventTransport} (Kafka by default) with <b>at-least-once</b> semantics.
  *
  * <ol>
  *   <li><b>Claim</b> a batch in a short transaction: {@code UPDATE ... WHERE id IN (SELECT ...
@@ -54,16 +48,16 @@ public class OutboxPublisher {
     private static final Duration MAX_BACKOFF = Duration.ofMinutes(5);
 
     private final JdbcTemplate jdbc;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final EventTransport transport;
     private final OutboxProperties properties;
     private final BookingMetrics metrics;
     private final Clock clock;
     private final String instanceId;
 
-    public OutboxPublisher(JdbcTemplate jdbc, KafkaTemplate<String, String> kafkaTemplate, OutboxProperties properties,
+    public OutboxPublisher(JdbcTemplate jdbc, EventTransport transport, OutboxProperties properties,
                            BookingMetrics metrics, Clock clock) {
         this.jdbc = jdbc;
-        this.kafkaTemplate = kafkaTemplate;
+        this.transport = transport;
         this.properties = properties;
         this.metrics = metrics;
         this.clock = clock;
@@ -119,22 +113,15 @@ public class OutboxPublisher {
     }
 
     private boolean publish(OutboxRow row) {
-        ProducerRecord<String, String> record = new ProducerRecord<>(row.topic(), row.aggregateId(), row.payload());
-        record.headers().add("eventId", row.id().toString().getBytes(StandardCharsets.UTF_8));
-        record.headers().add("eventType", row.eventType().getBytes(StandardCharsets.UTF_8));
-        record.headers().add("eventVersion", String.valueOf(row.eventVersion()).getBytes(StandardCharsets.UTF_8));
-        if (row.correlationId() != null) {
-            record.headers().add("correlationId", row.correlationId().getBytes(StandardCharsets.UTF_8));
-        }
         try {
-            kafkaTemplate.send(record).get(properties.sendTimeout().toMillis(), TimeUnit.MILLISECONDS);
+            transport.send(new EventTransport.OutboxMessage(row.id(), row.topic(), row.aggregateId(), row.eventType(),
+                    row.eventVersion(), row.correlationId(), row.payload()));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             recordFailure(row, "interrupted");
             return false;
-        } catch (ExecutionException | TimeoutException | RuntimeException e) {
-            Throwable cause = e instanceof ExecutionException ? e.getCause() : e;
-            recordFailure(row, cause.getClass().getSimpleName() + ": " + cause.getMessage());
+        } catch (Exception e) {
+            recordFailure(row, e.getClass().getSimpleName() + ": " + e.getMessage());
             return false;
         }
         int updated = jdbc.update("""

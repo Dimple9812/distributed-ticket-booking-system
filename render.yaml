@@ -1,0 +1,72 @@
+# Render Blueprint: one-click deploy of the whole demo on Render's free tier.
+#   https://render.com/deploy?repo=https://github.com/Dimple9812/distributed-ticket-booking-system
+#
+# Free-tier trade-offs (see README "Hosting on Render"):
+#  - No Kafka: the "render" profile delivers outbox events in-process (same retries + de-duplication).
+#  - The web service sleeps after 15 min without traffic; the first request then takes ~1-2 min.
+#  - Render's free PostgreSQL expires 30 days after creation unless upgraded.
+services:
+  - type: web
+    name: seatline-ticket-booking
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health/readiness
+    autoDeploy: true
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: docker,local,render          # "local" seeds a rolling week of demo screenings
+      - key: JAVA_OPTS
+        value: -XX:MaxRAMPercentage=65 -XX:+UseSerialGC -Xss512k -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=48m -XX:MaxMetaspaceSize=160m -XX:+ExitOnOutOfMemoryError
+      - key: DB_HOST
+        fromDatabase:
+          name: seatline-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: seatline-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: seatline-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: seatline-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: seatline-db
+          property: password
+      - key: REDIS_HOST
+        fromService:
+          type: keyvalue
+          name: seatline-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: keyvalue
+          name: seatline-redis
+          property: port
+      - key: JWT_SECRET
+        generateValue: true                 # random secret created by Render, never in git
+      - key: ADMIN_EMAIL
+        value: admin@seatline.demo
+      - key: ADMIN_PASSWORD
+        generateValue: true                 # view it in the Render dashboard → Environment
+
+  - type: keyvalue
+    name: seatline-redis
+    plan: free
+    region: singapore
+    ipAllowList: []                         # private network only; not reachable from the internet
+    maxmemoryPolicy: noeviction             # never silently drop live seat locks
+
+databases:
+  - name: seatline-db
+    plan: free
+    region: singapore
+    databaseName: ticketing
+    user: ticketing
+    postgresMajorVersion: "16"

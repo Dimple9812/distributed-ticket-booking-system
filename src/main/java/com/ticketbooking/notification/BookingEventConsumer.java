@@ -6,6 +6,7 @@ import com.ticketbooking.messaging.EventEnvelope;
 import com.ticketbooking.messaging.EventValidationException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.MDC;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
  * which the processed_events table turns into a no-op.
  */
 @Component
+@ConditionalOnProperty(prefix = "app.messaging", name = "transport", havingValue = "kafka", matchIfMissing = true)
 public class BookingEventConsumer {
 
     private final NotificationService notificationService;

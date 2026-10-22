@@ -1,0 +1,19 @@
+# Profile for Render's free tier: no Kafka broker, 512 MB RAM, a small free PostgreSQL.
+spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+  datasource:
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+  data:
+    redis:
+      timeout: 2s
+      connect-timeout: 2s
+app:
+  messaging:
+    transport: in-process
+server:
+  tomcat:
+    threads:
+      max: 50

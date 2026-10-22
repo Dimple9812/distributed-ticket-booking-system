@@ -4,7 +4,7 @@ A one-page overview: what was built, what was verified, how to talk about it in 
 and what is left to do. For the full technical write-up see the [README](../README.md).
 
 ## Status
-- 70 automated tests (15 unit, 55 integration) pass against real PostgreSQL 16, Redis 7 and a real Kafka broker.
+- 73 automated tests (15 unit, 58 integration) pass against real PostgreSQL 16, Redis 7 and a real Kafka broker.
   The final code passed 5 full builds in a row.
 - **Not verified:** `docker-compose.yml`, the `Dockerfile` and the Testcontainers path were never executed
   (the build environment had no Docker daemon). The integration tests ran in their fallback mode against

@@ -5,7 +5,8 @@ spring:
     virtual:
       enabled: false
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/ticketing}
+    # Either a full DB_URL, or the parts (hosts like Render expose host/port/name separately).
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ticketing}}
     username: ${DB_USERNAME:ticketing}
     password: ${DB_PASSWORD}
     hikari:
@@ -59,6 +60,10 @@ server:
   shutdown: graceful
 
 app:
+  messaging:
+    # kafka (default): outbox -> Kafka -> consumer.  in-process: outbox -> notification handler directly,
+    # for hosts without a Kafka broker (see application-render.yml).
+    transport: ${MESSAGING_TRANSPORT:kafka}
   security:
     jwt:
       secret: ${JWT_SECRET}
